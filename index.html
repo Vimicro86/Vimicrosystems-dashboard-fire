@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ESP32 Sensor Dashboard</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #f0f4f8, #d9e2ec);
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+      color: #333;
+    }
+
+    h1 {
+      margin-bottom: 40px;
+      font-size: 2em;
+      color: #00796b;
+    }
+
+    .dashboard {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 50px;
+    }
+
+    .value-box {
+      background-color: #ffffffcc;
+      border-radius: 20px;
+      padding: 25px 30px;
+      min-width: 180px;
+      text-align: center;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .value-box:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 12px 25px rgba(0,0,0,0.2);
+    }
+
+    .value-box h3 {
+      margin: 0 0 15px 0;
+      font-size: 1.3em;
+      color: #00796b;
+    }
+
+    .value-box p {
+      font-size: 1.5em;
+      font-weight: bold;
+      color: #004d40;
+      margin: 10px 0 0 0;
+    }
+
+    .gauge-container {
+      width: 150px;
+      height: 150px;
+      margin: 0 auto 10px auto;
+    }
+
+    #adcChart {
+      width: 100%;
+      max-width: 1200px;
+      height: 300px;
+      margin: 50px auto 0 auto;
+      background-color: #ffffffcc;
+      border-radius: 20px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+      padding: 15px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Fire Detection Dashboard</h1>
+
+  <div class="dashboard">
+    <div class="value-box">
+      <h3>Temperature</h3>
+      <div class="gauge-container">
+        <canvas id="adc1Gauge"></canvas>
+      </div>
+      <p id="adc1">0</p>
+    </div>
+
+    <div class="value-box">
+      <h3>Load Cell</h3>
+      <div class="gauge-container">
+        <canvas id="adc2Gauge"></canvas>
+      </div>
+      <p id="adc2">0</p>
+    </div>
+
+    <div class="value-box">
+  <h3>Relay</h3>
+  <p id="relay">OFF</p>
+  <img id="relayImg" src="red.png" alt="Relay Status" style="width:95px; height:90px; margin-top:35px;">
+</div>
+
+
+  <canvas id="adcChart"></canvas>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCaJPhoEowRvJ_g8ziA-SEtntDpsWHG5C4",
+      authDomain: "esp32-project-c3776.firebaseapp.com",
+      databaseURL: "https://esp32-project-c3776-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "esp32-project-c3776",
+      storageBucket: "esp32-project-c3776.appspot.com",
+      messagingSenderId: "796571386227",
+      appId: "1:796571386227:web:3d181ee3b429e682bbc506"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const adc1Ref = ref(db, "/sensors/ADC1");
+    const adc2Ref = ref(db, "/sensors/ADC2");
+    const relayRef = ref(db, "/sensors/Relay");
+
+    const adc1El = document.getElementById("adc1");
+    const adc2El = document.getElementById("adc2");
+    const relayEl = document.getElementById("relay");
+
+    const adc1Ctx = document.getElementById('adc1Gauge').getContext('2d');
+    const adc1Gauge = new Chart(adc1Ctx, {
+      type: 'doughnut',
+      data: { datasets: [{ data: [0, 200], backgroundColor: ['#00796b','#eeeeee'], borderWidth: 0 }] },
+      options: { rotation: 225, circumference: 270, cutout: '70%', plugins: { legend: { display: false } } }
+    });
+
+    const adc2Ctx = document.getElementById('adc2Gauge').getContext('2d');
+    const adc2Gauge = new Chart(adc2Ctx, {
+      type: 'doughnut',
+      data: { datasets: [{ data: [0, 20], backgroundColor: ['#0288d1','#eeeeee'], borderWidth: 0 }] },
+      options: { rotation: 225, circumference: 270, cutout: '70%', plugins: { legend: { display: false } } }
+    });
+
+    const ctx = document.getElementById('adcChart').getContext('2d');
+    const adcChart = new Chart(ctx, {
+      type: 'line',
+      data: { labels: [], datasets: [
+        { label: 'Temoperature', data: [], borderColor: 'blue', fill: false },
+        { label: 'Load Cell', data: [], borderColor: 'green', fill: false }
+      ] },
+      options: {
+        responsive: true,
+        animation: { duration: 0 },
+        scales: { x: { title: { display: true, text: 'Time' } }, y: { beginAtZero: true } }
+      }
+    });
+
+    let currentADC1 = 0, currentADC2 = 0;
+
+    onValue(adc1Ref, (snapshot) => { currentADC1 = snapshot.val() * 2; adc1El.innerText = currentADC1; });
+    onValue(adc2Ref, (snapshot) => { currentADC2 = snapshot.val(); adc2El.innerText = currentADC2; });
+    const relayImg = document.getElementById("relayImg");
+
+onValue(relayRef, (snapshot) => {
+  const relayStatus = snapshot.val();
+  relayEl.innerText = relayStatus ? "ON" : "OFF";
+
+  if (relayStatus) {
+    relayImg.src = "green.png";
+    relayImg.style.height = "90px";
+    relayImg.style.width = "130px";  // bigger size for ON
+  } else {
+    relayImg.src = "red.png";
+    relayImg.style.height = "90px";
+    relayImg.style.width = "95px";  // smaller size for OFF
+  }
+});
+
+
+    // Update gauges and chart every second
+    setInterval(() => {
+      // Update gauges
+      adc1Gauge.data.datasets[0].data[0] = currentADC1;
+      adc1Gauge.data.datasets[0].data[1] = 200 - currentADC1;
+      adc1Gauge.update();
+
+      adc2Gauge.data.datasets[0].data[0] = currentADC2;
+      adc2Gauge.data.datasets[0].data[1] = 20 - currentADC2;
+      adc2Gauge.update();
+
+      // Update chart
+      const time = new Date().toLocaleTimeString();
+      if(adcChart.data.labels.length > 60){ // keep last 60 seconds
+        adcChart.data.labels.shift();
+        adcChart.data.datasets[0].data.shift();
+        adcChart.data.datasets[1].data.shift();
+      }
+      adcChart.data.labels.push(time);
+      adcChart.data.datasets[0].data.push(currentADC1);
+      adcChart.data.datasets[1].data.push(currentADC2);
+      adcChart.update();
+    }, 1000);
+
+  </script>
+</body>
+</html>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ESP32 Sensor Dashboard</title>
+  <title> Sensor Dashboard</title>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -138,7 +138,7 @@
   </div>
 
   <!-- Center heading -->
-  <h1>Fire Detection Dashboard</h1>
+  <h1>Fire Safety Control System</h1>
 
   <!-- Last updated on right -->
   <span id="lastUpdated" class="last-updated"></span>
@@ -258,13 +258,13 @@ const adcChart = new Chart(ctx, {
 // Firebase listeners
 onValue(adc1Ref, (snapshot) => {
   currentADC1 = snapshot.val() || 0;
-  adc1El.innerText = currentADC1;
+  adc1El.innerText = currentADC1 + " °C";
   updateLastUpdated();
 });
 
 onValue(adc2Ref, (snapshot) => {
   currentADC2 = snapshot.val() || 0;
-  adc2El.innerText = currentADC2;
+  adc2El.innerText = currentADC2 + " kg";
   updateLastUpdated();
 });
 
@@ -308,3 +308,4 @@ setInterval(() => {
   </script>
 </body>
 </html>
+

@@ -78,7 +78,29 @@
 </head>
 <body>
 
-  <h1>Fire Detection Dashboard</h1>
+  <div style="position: relative; text-align: center; margin-bottom: 40px;">
+  <!-- Status on top-left -->
+  <div id="deviceStatus" 
+       style="position: absolute; left: 20px; top: 50%; transform: translateY(-50%);
+              font-size: 1.5em; color:#333; display:flex; align-items:center; gap:6px;">
+    <span id="statusLight" style="display:inline-block; width:12px; height:12px; border-radius:50%; background:red;"></span>
+    <span id="statusText">Offline</span>
+  </div>
+
+  <!-- Center heading -->
+  <h1 style="margin:0; font-size: 2em; color:#00796b;">
+    Fire Detection Dashboard
+  </h1>
+
+  <!-- Last updated on top-right -->
+  <span id="lastUpdated" 
+        style="position: absolute; right: 20px; top: 50%; transform: translateY(-50%);
+               font-size:1.5em; color:#555;">
+  </span>
+</div>
+
+
+
 
   <div class="dashboard">
     <div class="value-box">
@@ -108,62 +130,98 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js";
-    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-database.js";
+import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-database.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyCaJPhoEowRvJ_g8ziA-SEtntDpsWHG5C4",
-      authDomain: "esp32-project-c3776.firebaseapp.com",
-      databaseURL: "https://esp32-project-c3776-default-rtdb.europe-west1.firebasedatabase.app",
-      projectId: "esp32-project-c3776",
-      storageBucket: "esp32-project-c3776.appspot.com",
-      messagingSenderId: "796571386227",
-      appId: "1:796571386227:web:3d181ee3b429e682bbc506"
-    };
+const firebaseConfig = {
+  apiKey: "AIzaSyCaJPhoEowRvJ_g8ziA-SEtntDpsWHG5C4",
+  authDomain: "esp32-project-c3776.firebaseapp.com",
+  databaseURL: "https://esp32-project-c3776-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "esp32-project-c3776",
+  storageBucket: "esp32-project-c3776.appspot.com",
+  messagingSenderId: "796571386227",
+  appId: "1:796571386227:web:3d181ee3b429e682bbc506"
+};
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
 
-    const adc1Ref = ref(db, "/sensors/ADC1");
-    const adc2Ref = ref(db, "/sensors/ADC2");
-    const relayRef = ref(db, "/sensors/Relay");
+const adc1Ref = ref(db, "/sensors/ADC1");
+const adc2Ref = ref(db, "/sensors/ADC2");
+const relayRef = ref(db, "/sensors/Relay");
 
-    const adc1El = document.getElementById("adc1");
-    const adc2El = document.getElementById("adc2");
-    const relayEl = document.getElementById("relay");
+const adc1El = document.getElementById("adc1");
+const adc2El = document.getElementById("adc2");
+const relayEl = document.getElementById("relay");
+const relayImg = document.getElementById("relayImg");
+const lastUpdatedEl = document.getElementById("lastUpdated");
 
-    const adc1Ctx = document.getElementById('adc1Gauge').getContext('2d');
-    const adc1Gauge = new Chart(adc1Ctx, {
-      type: 'doughnut',
-      data: { datasets: [{ data: [0, 200], backgroundColor: ['#00796b','#eeeeee'], borderWidth: 0 }] },
-      options: { rotation: 225, circumference: 270, cutout: '70%', plugins: { legend: { display: false } } }
-    });
+let currentADC1 = 0, currentADC2 = 0;
+let lastUpdateTimestamp = Date.now();
 
-    const adc2Ctx = document.getElementById('adc2Gauge').getContext('2d');
-    const adc2Gauge = new Chart(adc2Ctx, {
-      type: 'doughnut',
-      data: { datasets: [{ data: [0, 20], backgroundColor: ['#0288d1','#eeeeee'], borderWidth: 0 }] },
-      options: { rotation: 225, circumference: 270, cutout: '70%', plugins: { legend: { display: false } } }
-    });
+function updateLastUpdated() {
+  const now = new Date();
+  lastUpdatedEl.innerText = "Last updated: " + now.toLocaleTimeString();
+  lastUpdateTimestamp = Date.now();
+}
 
-    const ctx = document.getElementById('adcChart').getContext('2d');
-    const adcChart = new Chart(ctx, {
-      type: 'line',
-      data: { labels: [], datasets: [
-        { label: 'Temoperature', data: [], borderColor: 'blue', fill: false },
-        { label: 'Load Cell', data: [], borderColor: 'green', fill: false }
-      ] },
-      options: {
-        responsive: true,
-        animation: { duration: 0 },
-        scales: { x: { title: { display: true, text: 'Time' } }, y: { beginAtZero: true } }
-      }
-    });
+function checkDeviceStatus() {
+  const now = Date.now();
+  const diffMinutes = (now - lastUpdateTimestamp) / 60000;
+  const statusLight = document.getElementById("statusLight");
+  const statusText = document.getElementById("statusText");
 
-    let currentADC1 = 0, currentADC2 = 0;
+  if (diffMinutes > 3) {
+    statusLight.style.background = "red";
+    statusText.innerText = "Offline";
+  } else {
+    statusLight.style.background = "green";
+    statusText.innerText = "Online";
+  }
+}
+setInterval(checkDeviceStatus, 10000);
 
-    onValue(adc1Ref, (snapshot) => { currentADC1 = snapshot.val() * 2; adc1El.innerText = currentADC1; });
-    onValue(adc2Ref, (snapshot) => { currentADC2 = snapshot.val(); adc2El.innerText = currentADC2; });
-    const relayImg = document.getElementById("relayImg");
+// Gauges
+const adc1Ctx = document.getElementById('adc1Gauge').getContext('2d');
+const adc1Gauge = new Chart(adc1Ctx, {
+  type: 'doughnut',
+  data: { datasets: [{ data: [0, 200], backgroundColor: ['#00796b','#eeeeee'], borderWidth: 0 }] },
+  options: { rotation: 225, circumference: 270, cutout: '70%', plugins: { legend: { display: false } } }
+});
+
+const adc2Ctx = document.getElementById('adc2Gauge').getContext('2d');
+const adc2Gauge = new Chart(adc2Ctx, {
+  type: 'doughnut',
+  data: { datasets: [{ data: [0, 20], backgroundColor: ['#0288d1','#eeeeee'], borderWidth: 0 }] },
+  options: { rotation: 225, circumference: 270, cutout: '70%', plugins: { legend: { display: false } } }
+});
+
+// Line chart
+const ctx = document.getElementById('adcChart').getContext('2d');
+const adcChart = new Chart(ctx, {
+  type: 'line',
+  data: { labels: [], datasets: [
+    { label: 'Temperature', data: [], borderColor: 'blue', fill: false },
+    { label: 'Load Cell', data: [], borderColor: 'green', fill: false }
+  ] },
+  options: {
+    responsive: true,
+    animation: { duration: 0 },
+    scales: { x: { title: { display: true, text: 'Time' } }, y: { beginAtZero: true } }
+  }
+});
+
+// Firebase listeners
+onValue(adc1Ref, (snapshot) => {
+  currentADC1 = snapshot.val() || 0;
+  adc1El.innerText = currentADC1;
+  updateLastUpdated();
+});
+
+onValue(adc2Ref, (snapshot) => {
+  currentADC2 = snapshot.val() || 0;
+  adc2El.innerText = currentADC2;
+  updateLastUpdated();
+});
 
 onValue(relayRef, (snapshot) => {
   const relayStatus = snapshot.val();
@@ -172,38 +230,35 @@ onValue(relayRef, (snapshot) => {
   if (relayStatus) {
     relayImg.src = "green.png";
     relayImg.style.height = "90px";
-    relayImg.style.width = "130px";  // bigger size for ON
+    relayImg.style.width = "130px";
   } else {
     relayImg.src = "red.png";
     relayImg.style.height = "90px";
-    relayImg.style.width = "95px";  // smaller size for OFF
+    relayImg.style.width = "95px";
   }
+  updateLastUpdated();
 });
 
+// Update gauges and chart every second
+setInterval(() => {
+  adc1Gauge.data.datasets[0].data = [currentADC1, 200 - currentADC1];
+  adc1Gauge.update();
 
-    // Update gauges and chart every second
-    setInterval(() => {
-      // Update gauges
-      adc1Gauge.data.datasets[0].data[0] = currentADC1;
-      adc1Gauge.data.datasets[0].data[1] = 200 - currentADC1;
-      adc1Gauge.update();
+  adc2Gauge.data.datasets[0].data = [currentADC2, 20 - currentADC2];
+  adc2Gauge.update();
 
-      adc2Gauge.data.datasets[0].data[0] = currentADC2;
-      adc2Gauge.data.datasets[0].data[1] = 20 - currentADC2;
-      adc2Gauge.update();
+  const time = new Date().toLocaleTimeString();
+  if(adcChart.data.labels.length > 60){
+    adcChart.data.labels.shift();
+    adcChart.data.datasets[0].data.shift();
+    adcChart.data.datasets[1].data.shift();
+  }
+  adcChart.data.labels.push(time);
+  adcChart.data.datasets[0].data.push(currentADC1);
+  adcChart.data.datasets[1].data.push(currentADC2);
+  adcChart.update();
+}, 1000);
 
-      // Update chart
-      const time = new Date().toLocaleTimeString();
-      if(adcChart.data.labels.length > 60){ // keep last 60 seconds
-        adcChart.data.labels.shift();
-        adcChart.data.datasets[0].data.shift();
-        adcChart.data.datasets[1].data.shift();
-      }
-      adcChart.data.labels.push(time);
-      adcChart.data.datasets[0].data.push(currentADC1);
-      adcChart.data.datasets[1].data.push(currentADC2);
-      adcChart.update();
-    }, 1000);
 
   </script>
 </body>

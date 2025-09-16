@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Login - Fire Dashboard</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #00796b, #26a69a);
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .login-box {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+      width: 100%;
+      max-width: 400px;
+      padding: 40px 30px;
+      text-align: center;
+      animation: fadeIn 0.6s ease-in-out;
+    }
+
+    .login-box h1 {
+      margin-bottom: 10px;
+      font-size: 1.8rem;
+      color: #00796b;
+    }
+
+    .login-box p {
+      margin-bottom: 25px;
+      color: #555;
+      font-size: 0.95rem;
+    }
+
+    .input-group {
+      margin-bottom: 20px;
+      text-align: left;
+    }
+
+    .input-group label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 0.85rem;
+      color: #333;
+    }
+
+    .input-group input {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+      transition: border 0.2s;
+    }
+
+    .input-group input:focus {
+      border-color: #00796b;
+      outline: none;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      font-size: 1rem;
+      font-weight: bold;
+      border: none;
+      border-radius: 10px;
+      background: #00796b;
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.1s;
+    }
+
+    button:hover {
+      background: #004d40;
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+
+    .error {
+      color: #d32f2f;
+      margin-top: 12px;
+      display: none;
+      font-size: 0.9rem;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Mobile friendly */
+    @media (max-width: 480px) {
+      .login-box {
+        padding: 30px 20px;
+      }
+      .login-box h1 {
+        font-size: 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="login-box">
+    <h1>Fire Dashboard</h1>
+    <p>Please log in to continue</p>
+
+    <form id="loginForm" onsubmit="return handleSubmit(event)">
+      <div class="input-group">
+        <label for="userId">User ID</label>
+        <input id="userId" type="text" required autofocus />
+      </div>
+
+      <div class="input-group">
+        <label for="password">Password</label>
+        <input id="password" type="password" required />
+      </div>
+
+      <button type="submit">Login</button>
+      <div id="errorMsg" class="error">❌ Invalid User ID or Password</div>
+    </form>
+  </div>
+
+  <script>
+    const EXPECTED_USER = "Fire";
+    const EXPECTED_PASS = "12345678";
+
+    function handleSubmit(e) {
+      e.preventDefault();
+      const u = document.getElementById("userId").value.trim();
+      const p = document.getElementById("password").value;
+      const err = document.getElementById("errorMsg");
+
+      if (u === EXPECTED_USER && p === EXPECTED_PASS) {
+        window.location.href = "index.html";
+      } else {
+        err.style.display = "block";
+        document.getElementById("password").value = "";
+        document.getElementById("password").focus();
+      }
+      return false;
+    }
+  </script>
+</body>
+</html>

@@ -1,265 +1,153 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ESP32 Sensor Dashboard</title>
-
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Login - Fire Dashboard</title>
   <style>
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, #f0f4f8, #d9e2ec);
       margin: 0;
-      padding: 20px;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #00796b, #26a69a);
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .login-box {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+      width: 100%;
+      max-width: 400px;
+      padding: 40px 30px;
       text-align: center;
+      animation: fadeIn 0.6s ease-in-out;
+    }
+
+    .login-box h1 {
+      margin-bottom: 10px;
+      font-size: 1.8rem;
+      color: #00796b;
+    }
+
+    .login-box p {
+      margin-bottom: 25px;
+      color: #555;
+      font-size: 0.95rem;
+    }
+
+    .input-group {
+      margin-bottom: 20px;
+      text-align: left;
+    }
+
+    .input-group label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 0.85rem;
       color: #333;
     }
 
-    h1 {
-      margin-bottom: 40px;
-      font-size: 2em;
-      color: #00796b;
-    }
-
-    .dashboard {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 50px;
-    }
-
-    .value-box {
-      background-color: #ffffffcc;
-      border-radius: 20px;
-      padding: 25px 30px;
-      min-width: 180px;
-      text-align: center;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-
-    .value-box:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 12px 25px rgba(0,0,0,0.2);
-    }
-
-    .value-box h3 {
-      margin: 0 0 15px 0;
-      font-size: 1.3em;
-      color: #00796b;
-    }
-
-    .value-box p {
-      font-size: 1.5em;
-      font-weight: bold;
-      color: #004d40;
-      margin: 10px 0 0 0;
-    }
-
-    .gauge-container {
-      width: 150px;
-      height: 150px;
-      margin: 0 auto 10px auto;
-    }
-
-    #adcChart {
+    .input-group input {
       width: 100%;
-      max-width: 1200px;
-      height: 300px;
-      margin: 50px auto 0 auto;
-      background-color: #ffffffcc;
-      border-radius: 20px;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-      padding: 15px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+      transition: border 0.2s;
+    }
+
+    .input-group input:focus {
+      border-color: #00796b;
+      outline: none;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      font-size: 1rem;
+      font-weight: bold;
+      border: none;
+      border-radius: 10px;
+      background: #00796b;
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.1s;
+    }
+
+    button:hover {
+      background: #004d40;
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+
+    .error {
+      color: #d32f2f;
+      margin-top: 12px;
+      display: none;
+      font-size: 0.9rem;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Mobile friendly */
+    @media (max-width: 480px) {
+      .login-box {
+        padding: 30px 20px;
+      }
+      .login-box h1 {
+        font-size: 1.5rem;
+      }
     }
   </style>
 </head>
 <body>
+  <div class="login-box">
+    <h1>Fire Dashboard</h1>
+    <p>Please log in to continue</p>
 
-  <div style="position: relative; text-align: center; margin-bottom: 40px;">
-  <!-- Status on top-left -->
-  <div id="deviceStatus" 
-       style="position: absolute; left: 20px; top: 50%; transform: translateY(-50%);
-              font-size: 1.5em; color:#333; display:flex; align-items:center; gap:6px;">
-    <span id="statusLight" style="display:inline-block; width:12px; height:12px; border-radius:50%; background:red;"></span>
-    <span id="statusText">Offline</span>
+    <form id="loginForm" onsubmit="return handleSubmit(event)">
+      <div class="input-group">
+        <label for="userId">User ID</label>
+        <input id="userId" type="text" required autofocus />
+      </div>
+
+      <div class="input-group">
+        <label for="password">Password</label>
+        <input id="password" type="password" required />
+      </div>
+
+      <button type="submit">Login</button>
+      <div id="errorMsg" class="error">❌ Invalid User ID or Password</div>
+    </form>
   </div>
 
-  <!-- Center heading -->
-  <h1 style="margin:0; font-size: 2em; color:#00796b;">
-    Fire Detection Dashboard
-  </h1>
+  <script>
+    const EXPECTED_USER = "Fire";
+    const EXPECTED_PASS = "12345678";
 
-  <!-- Last updated on top-right -->
-  <span id="lastUpdated" 
-        style="position: absolute; right: 20px; top: 50%; transform: translateY(-50%);
-               font-size:1.5em; color:#555;">
-  </span>
-</div>
+    function handleSubmit(e) {
+      e.preventDefault();
+      const u = document.getElementById("userId").value.trim();
+      const p = document.getElementById("password").value;
+      const err = document.getElementById("errorMsg");
 
-
-
-
-  <div class="dashboard">
-    <div class="value-box">
-      <h3>Temperature</h3>
-      <div class="gauge-container">
-        <canvas id="adc1Gauge"></canvas>
-      </div>
-      <p id="adc1">0</p>
-    </div>
-
-    <div class="value-box">
-      <h3>Load Cell</h3>
-      <div class="gauge-container">
-        <canvas id="adc2Gauge"></canvas>
-      </div>
-      <p id="adc2">0</p>
-    </div>
-
-    <div class="value-box">
-  <h3>Relay</h3>
-  <p id="relay">OFF</p>
-  <img id="relayImg" src="red.png" alt="Relay Status" style="width:95px; height:90px; margin-top:35px;">
-</div>
-
-
-  <canvas id="adcChart"></canvas>
-
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js";
-import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-database.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyCaJPhoEowRvJ_g8ziA-SEtntDpsWHG5C4",
-  authDomain: "esp32-project-c3776.firebaseapp.com",
-  databaseURL: "https://esp32-project-c3776-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "esp32-project-c3776",
-  storageBucket: "esp32-project-c3776.appspot.com",
-  messagingSenderId: "796571386227",
-  appId: "1:796571386227:web:3d181ee3b429e682bbc506"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-
-const adc1Ref = ref(db, "/sensors/ADC1");
-const adc2Ref = ref(db, "/sensors/ADC2");
-const relayRef = ref(db, "/sensors/Relay");
-
-const adc1El = document.getElementById("adc1");
-const adc2El = document.getElementById("adc2");
-const relayEl = document.getElementById("relay");
-const relayImg = document.getElementById("relayImg");
-const lastUpdatedEl = document.getElementById("lastUpdated");
-
-let currentADC1 = 0, currentADC2 = 0;
-let lastUpdateTimestamp = Date.now();
-
-function updateLastUpdated() {
-  const now = new Date();
-  lastUpdatedEl.innerText = "Last updated: " + now.toLocaleTimeString();
-  lastUpdateTimestamp = Date.now();
-}
-
-function checkDeviceStatus() {
-  const now = Date.now();
-  const diffMinutes = (now - lastUpdateTimestamp) / 60000;
-  const statusLight = document.getElementById("statusLight");
-  const statusText = document.getElementById("statusText");
-
-  if (diffMinutes > 3) {
-    statusLight.style.background = "red";
-    statusText.innerText = "Offline";
-  } else {
-    statusLight.style.background = "green";
-    statusText.innerText = "Online";
-  }
-}
-setInterval(checkDeviceStatus, 10000);
-
-// Gauges
-const adc1Ctx = document.getElementById('adc1Gauge').getContext('2d');
-const adc1Gauge = new Chart(adc1Ctx, {
-  type: 'doughnut',
-  data: { datasets: [{ data: [0, 200], backgroundColor: ['#00796b','#eeeeee'], borderWidth: 0 }] },
-  options: { rotation: 225, circumference: 270, cutout: '70%', plugins: { legend: { display: false } } }
-});
-
-const adc2Ctx = document.getElementById('adc2Gauge').getContext('2d');
-const adc2Gauge = new Chart(adc2Ctx, {
-  type: 'doughnut',
-  data: { datasets: [{ data: [0, 20], backgroundColor: ['#0288d1','#eeeeee'], borderWidth: 0 }] },
-  options: { rotation: 225, circumference: 270, cutout: '70%', plugins: { legend: { display: false } } }
-});
-
-// Line chart
-const ctx = document.getElementById('adcChart').getContext('2d');
-const adcChart = new Chart(ctx, {
-  type: 'line',
-  data: { labels: [], datasets: [
-    { label: 'Temperature', data: [], borderColor: 'blue', fill: false },
-    { label: 'Load Cell', data: [], borderColor: 'green', fill: false }
-  ] },
-  options: {
-    responsive: true,
-    animation: { duration: 0 },
-    scales: { x: { title: { display: true, text: 'Time' } }, y: { beginAtZero: true } }
-  }
-});
-
-// Firebase listeners
-onValue(adc1Ref, (snapshot) => {
-  currentADC1 = snapshot.val() || 0;
-  adc1El.innerText = currentADC1;
-  updateLastUpdated();
-});
-
-onValue(adc2Ref, (snapshot) => {
-  currentADC2 = snapshot.val() || 0;
-  adc2El.innerText = currentADC2;
-  updateLastUpdated();
-});
-
-onValue(relayRef, (snapshot) => {
-  const relayStatus = snapshot.val();
-  relayEl.innerText = relayStatus ? "ON" : "OFF";
-
-  if (relayStatus) {
-    relayImg.src = "green.png";
-    relayImg.style.height = "90px";
-    relayImg.style.width = "130px";
-  } else {
-    relayImg.src = "red.png";
-    relayImg.style.height = "90px";
-    relayImg.style.width = "95px";
-  }
-  updateLastUpdated();
-});
-
-// Update gauges and chart every second
-setInterval(() => {
-  adc1Gauge.data.datasets[0].data = [currentADC1, 200 - currentADC1];
-  adc1Gauge.update();
-
-  adc2Gauge.data.datasets[0].data = [currentADC2, 20 - currentADC2];
-  adc2Gauge.update();
-
-  const time = new Date().toLocaleTimeString();
-  if(adcChart.data.labels.length > 60){
-    adcChart.data.labels.shift();
-    adcChart.data.datasets[0].data.shift();
-    adcChart.data.datasets[1].data.shift();
-  }
-  adcChart.data.labels.push(time);
-  adcChart.data.datasets[0].data.push(currentADC1);
-  adcChart.data.datasets[1].data.push(currentADC2);
-  adcChart.update();
-}, 1000);
-
-
+      if (u === EXPECTED_USER && p === EXPECTED_PASS) {
+        window.location.href = "login.html";
+      } else {
+        err.style.display = "block";
+        document.getElementById("password").value = "";
+        document.getElementById("password").focus();
+      }
+      return false;
+    }
   </script>
 </body>
 </html>
